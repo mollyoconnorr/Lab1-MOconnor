@@ -22,8 +22,6 @@ public class Plant implements Runnable {
      * Number of plants to be initialized
      */
     private static final int NUM_PLANTS = 2;
-    private static final LinkedBlockingQueue<Orange> readyToJuiceQueue = new LinkedBlockingQueue<>();
-    private static final LinkedBlockingQueue<Orange> readyToProcessQueue = new LinkedBlockingQueue<>();
     /**
      * Oranges required per bottle of juice
      */
@@ -49,7 +47,9 @@ public class Plant implements Runnable {
      */
     private final LinkedBlockingQueue<Orange> readyToFetchQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<Orange> readyToPeelQueue = new LinkedBlockingQueue<>();
+    private static final LinkedBlockingQueue<Orange> readyToJuiceQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<Orange> readyToBottleQueue = new LinkedBlockingQueue<>();
+    private static final LinkedBlockingQueue<Orange> readyToProcessQueue = new LinkedBlockingQueue<>();
     /**
      * Workers responsible for fetching, peeling, juicing, or bottling
      */

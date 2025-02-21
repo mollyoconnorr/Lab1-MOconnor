@@ -10,13 +10,13 @@
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class Worker implements Runnable {
-    private final String workerName;
-    private final LinkedBlockingQueue<Orange> processQueue;
-    private final LinkedBlockingQueue<Orange> newProcessQueue;
-    private final Orange.State assignedState;
-    private int orangesProcessed = 0;
-    private volatile boolean running = true;
-    private int fetchedCount = 0;
+    private final String workerName;  // Worker role identifier (e.g., "Fetcher")
+    private final LinkedBlockingQueue<Orange> processQueue;  // Queue to fetch oranges from
+    private final LinkedBlockingQueue<Orange> newProcessQueue;  // Queue for processed oranges
+    private final Orange.State assignedState;  // State of orange this worker processes
+    private int orangesProcessed = 0;  // Count of oranges processed
+    private volatile boolean running = true;  // Worker running flag
+    private int fetchedCount = 0;  // Count of oranges fetched
 
     /**
      * Constructs a Worker for processing oranges in a specific plant.
