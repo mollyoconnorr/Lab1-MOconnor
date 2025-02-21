@@ -3,7 +3,7 @@
 ## Overview
 The JuiceBottler project simulates a multi-threaded orange juice production process. Oranges are fetched, peeled, juiced, and bottled in parallel by multiple workers in two plants. The project demonstrates both data parallelization (multiple plants) and task parallelization (multiple workers per plant) through the use of Java threads and synchronized queues. The program outputs a summary of the process, including the number of oranges fetched, processed, bottled, and wasted.
 
-## Requirements
+## Goals of Project
 
 - **Multiple Plants**: At least two plants must be running to simulate parallel processing.
 - **Multiple Workers per Plant**: Each plant must have workers performing specific tasks such as fetching, peeling, juicing, and bottling oranges.
@@ -25,7 +25,7 @@ The JuiceBottler project simulates a multi-threaded orange juice production proc
 4. **JuiceBottler (Main Class)**: The entry point of the program that initializes the plants and starts the simulation.
 
 ### Data Structures
-- **LinkedBlockingQueue**: Used for task coordination and communication between different stages of the juice production process (e.g., ready-to-fetch, ready-to-peel, ready-to-juice, ready-to-bottle).
+- **LinkedBlockingQueue**: Found out about LinkedBlockingQueue at https://www.geeksforgeeks.org/linkedblockingqueue-class-in-java/ and I decided it would work well for my implementation. Used for task coordination and communication between different stages of the juice production process (e.g., ready-to-fetch, ready-to-peel, ready-to-juice, ready-to-bottle).
 
 ### Threads
 - **Main thread**: Initializes the plants, starts the threads, and prints the final summary of the operations.
@@ -39,7 +39,7 @@ The JuiceBottler project simulates a multi-threaded orange juice production proc
 2. Compile the project:
    - Using **ANT**: Run the following command from the project directory:
      ```bash
-     ant
+     ant run
      ```
    - Using **IDE**: Import the project into your Java IDE and run the `JuiceBottler` class.
 
@@ -49,17 +49,16 @@ The JuiceBottler project simulates a multi-threaded orange juice production proc
 The program will print a summary of the juice production process, including the following:
 - Total number of oranges provided by all plants.
 - Total number of oranges fetched, processed, bottled, and wasted.
-- A summary of the final statistics for all plants.
 
 ### Example Output:
 ```bash
 Plant[1] Processing oranges
-.
-.
-Plant[1] Done Processing
 Plant[2] Processing oranges
 .
 .
+.
+.
+Plant[1] Done Processing
 Plant[2] Done Processing
 
 ======= Juice Plant Processing Summary =======
