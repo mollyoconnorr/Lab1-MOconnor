@@ -1,9 +1,9 @@
 /**
  * Represents a Worker in the processing plant responsible for processing oranges.
- * The Worker fetches oranges from the process queue, processes them, and places them
+ * The Worker fetches, peels, juices (squeezes) or bottles oranges from a process queue, processes them, and places them
  * into a new queue after processing.
  *
- * @author Nathan Williams & Molly O'Connor
+ * @author Molly O'Connor
  * @since 2025-02-20
  */
 
@@ -21,11 +21,11 @@ public class Worker implements Runnable {
     /**
      * Constructs a Worker for processing oranges in a specific plant.
      *
-     * @param plantNumber The number of the plant this worker belongs to.
-     * @param workerName  The name of the worker.
-     * @param processQueue The queue from which the worker fetches oranges for processing.
+     * @param plantNumber     The number of the plant this worker belongs to.
+     * @param workerName      The name of the worker.
+     * @param processQueue    The queue from which the worker fetches oranges for processing.
      * @param newProcessQueue The queue where the worker places processed oranges.
-     * @param assignedState The state assigned to this worker (defines the type of work).
+     * @param assignedState   The state assigned to this worker (defines the type of work).
      */
     public Worker(int plantNumber, String workerName, LinkedBlockingQueue<Orange> processQueue,
                   LinkedBlockingQueue<Orange> newProcessQueue, Orange.State assignedState) {
@@ -92,18 +92,6 @@ public class Worker implements Runnable {
     }
 
     /**
-     * Processes the entire orange through all stages until it is bottled.
-     *
-     * @param orange The orange to process.
-     */
-    private void processEntireOrange(Orange orange) {
-        while (orange.getState() != Orange.State.Bottled) {
-            orange.runProcess();
-        }
-        orangesProcessed++;
-    }
-
-    /**
      * Returns the number of oranges processed by this worker.
      *
      * @return The number of processed oranges.
@@ -113,11 +101,12 @@ public class Worker implements Runnable {
     }
 
     /**
-     * Returns the number of fetched oranges (when the worker starts processing).
+     * Returns the number of fetched oranges (only applies to fetcher worker).
      *
      * @return The number of fetched oranges.
      */
     public int getFetchedCount() {
         return fetchedCount;
     }
+
 }

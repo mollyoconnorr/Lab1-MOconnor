@@ -22,43 +22,53 @@ public class Plant implements Runnable {
      * Number of plants to be initialized
      */
     private static final int NUM_PLANTS = 2;
-    /**
-     * Shared queue for oranges ready to be juiced
-     */
     private static final LinkedBlockingQueue<Orange> readyToJuiceQueue = new LinkedBlockingQueue<>();
-    /**
-     * Shared queue for oranges ready to be processed
-     */
     private static final LinkedBlockingQueue<Orange> readyToProcessQueue = new LinkedBlockingQueue<>();
-
     /**
      * Oranges required per bottle of juice
      */
     public final int ORANGES_PER_BOTTLE = 3;
-    private final int plantNumber;
-
     /**
-     * Shared queue for oranges ready to be fetched
+     * Given plant Number
+     */
+    private final int plantNumber;
+    /**
+     * Main thread that runs the plant operations.
+     */
+    private final Thread thread;
+    /**
+     * List of worker instances responsible for processing oranges at different stages.
+     */
+    private final List<Worker> workers;
+    /**
+     * List of threads assigned to workers.
+     */
+    private final List<Thread> workerThreads;
+    /**
+     * Shared queues for oranges ready to be fetched, peeled, juiced, bottled, or processed
      */
     private final LinkedBlockingQueue<Orange> readyToFetchQueue = new LinkedBlockingQueue<>();
-    /**
-     * Shared queue for oranges ready to be peeled
-     */
     private final LinkedBlockingQueue<Orange> readyToPeelQueue = new LinkedBlockingQueue<>();
-    /**
-     * Shared queue for oranges ready to be bottled
-     */
     private final LinkedBlockingQueue<Orange> readyToBottleQueue = new LinkedBlockingQueue<>();
-    private final Thread thread;
-    private final List<Worker> workers;
-    private final List<Thread> workerThreads;
-    // Worker roles in the plant
+    /**
+     * Workers responsible for fetching, peeling, juicing, or bottling
+     */
     Worker fetcher = new Worker(1, "Fetcher", readyToFetchQueue, readyToPeelQueue, Orange.State.Fetched);
     Worker peeler = new Worker(1, "Peeler", readyToPeelQueue, readyToJuiceQueue, Orange.State.Peeled);
     Worker juicer = new Worker(2, "Juicer", readyToJuiceQueue, readyToBottleQueue, Orange.State.Squeezed);
     Worker bottler = new Worker(2, "Bottler", readyToBottleQueue, readyToProcessQueue, Orange.State.Bottled);
+    /**
+     * Total number of oranges provided to the plant for processing.
+     */
     private int orangesProvided;
+    /**
+     * Total number of oranges successfully processed into juice.
+     */
     private int orangesProcessed;
+    /**
+     * Flag to control whether the plant should continue working.
+     * It is marked as volatile to ensure visibility across threads.
+     */
     private volatile boolean timeToWork;
 
     /**
@@ -106,7 +116,7 @@ public class Plant implements Runnable {
 
         for (Plant p : plants) {
             totalProvided += p.getProvidedOranges();
-            totalFetched += p.fetcher.getFetchedCount();  // Fetcher processed count
+            totalFetched += p.fetcher.getFetchedCount();
             totalProcessed += p.getTotalProcessedOranges();
             totalBottles += p.getBottles();
             totalWasted += p.getWaste();
