@@ -19,6 +19,8 @@ The JuiceBottler project simulates a multi-threaded orange juice production proc
 ## Project Structure
 
 ### Classes
+To view UML Diagrams click here! [Juice Bottler_ UML Diagrams.pdf](https://github.com/user-attachments/files/18914096/Juice.Bottler_.UML.Diagrams.pdf)
+
 1. **Plant**: Represents a single plant in the juice production process. The plant manages multiple workers (fetcher, peeler, juicer, and bottler) and coordinates their tasks.
 2. **Worker**: Represents a single worker in the plant, responsible for processing a specific task such as fetching, peeling, juicing, or bottling oranges.
 3. **Orange**: Represents an individual orange being processed in the plant.
