@@ -65,7 +65,7 @@ public class Worker implements Runnable {
                 // Once the orange is processed, place it in the new queue
                 if (orange.getState() == Orange.State.Processed) {
                     // Comments left for logging purposes for future use of program
-                    System.out.println(workerName + "Worker " + expectedState + " (" + orange + "), fully processed");
+                    // System.out.println(workerName + "Worker " + expectedState + " (" + orange + "), fully processed");
                     newProcessQueue.put(orange);
                     orangesProcessed++;
                 } else {
