@@ -1,14 +1,88 @@
+/**
+ * The Plant class represents a juice processing plant that processes oranges
+ * through various stages such as fetching, peeling, juicing, and bottling.
+ * Workers are assigned specific roles, and the plant operates by managing queues
+ * for each stage of processing. The plant can handle multiple workers and provides
+ * a summary of processing results.
+ *
+ * @author Nathan Williams & Molly O'Connor
+ * @since 2025-02-20
+ */
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
+
 public class Plant implements Runnable {
-    // How long do we want to run the juice processing
+    /**
+     * Processing duration in milliseconds
+     */
     public static final long PROCESSING_TIME = 5 * 1000;
-
+    /**
+     * Number of plants to be initialized
+     */
     private static final int NUM_PLANTS = 2;
+    /**
+     * Shared queue for oranges ready to be juiced
+     */
+    private static final LinkedBlockingQueue<Orange> readyToJuiceQueue = new LinkedBlockingQueue<>();
+    /**
+     * Shared queue for oranges ready to be processed
+     */
+    private static final LinkedBlockingQueue<Orange> readyToProcessQueue = new LinkedBlockingQueue<>();
 
-    public static void main(String[] args) {
+    /**
+     * Oranges required per bottle of juice
+     */
+    public final int ORANGES_PER_BOTTLE = 3;
+    private final int plantNumber;
+
+    /**
+     * Shared queue for oranges ready to be fetched
+     */
+    private final LinkedBlockingQueue<Orange> readyToFetchQueue = new LinkedBlockingQueue<>();
+    /**
+     * Shared queue for oranges ready to be peeled
+     */
+    private final LinkedBlockingQueue<Orange> readyToPeelQueue = new LinkedBlockingQueue<>();
+    /**
+     * Shared queue for oranges ready to be bottled
+     */
+    private final LinkedBlockingQueue<Orange> readyToBottleQueue = new LinkedBlockingQueue<>();
+    private final Thread thread;
+    private final List<Worker> workers;
+    private final List<Thread> workerThreads;
+    // Worker roles in the plant
+    Worker fetcher = new Worker(1, "Fetcher", readyToFetchQueue, readyToPeelQueue, Orange.State.Fetched);
+    Worker peeler = new Worker(1, "Peeler", readyToPeelQueue, readyToJuiceQueue, Orange.State.Peeled);
+    Worker juicer = new Worker(2, "Juicer", readyToJuiceQueue, readyToBottleQueue, Orange.State.Squeezed);
+    Worker bottler = new Worker(2, "Bottler", readyToBottleQueue, readyToProcessQueue, Orange.State.Bottled);
+    private int orangesProvided;
+    private int orangesProcessed;
+    private volatile boolean timeToWork;
+
+    /**
+     * Constructs a new Plant instance with a given plant number.
+     *
+     * @param plantNumber The unique identifier for this plant.
+     */
+    Plant(int plantNumber) {
+        this.plantNumber = plantNumber;
+        this.workerThreads = new ArrayList<>();
+        this.workers = new ArrayList<>();
+        this.orangesProvided = 0;
+        this.orangesProcessed = 0;
+        this.thread = new Thread(this, "Plant[" + plantNumber + "]");
+    }
+
+    /**
+     * Main method to start the juice processing plants.
+     */
+    public static void main(String[] args) throws InterruptedException {
         // Startup the plants
         Plant[] plants = new Plant[NUM_PLANTS];
         for (int i = 0; i < NUM_PLANTS; i++) {
-            plants[i] = new Plant(i+1);
+            plants[i] = new Plant(1 + i);
             plants[i].startPlant();
         }
 
@@ -25,20 +99,34 @@ public class Plant implements Runnable {
 
         // Summarize the results
         int totalProvided = 0;
+        int totalFetched = 0;
         int totalProcessed = 0;
         int totalBottles = 0;
         int totalWasted = 0;
+
         for (Plant p : plants) {
             totalProvided += p.getProvidedOranges();
-            totalProcessed += p.getProcessedOranges();
+            totalFetched += p.fetcher.getFetchedCount();  // Fetcher processed count
+            totalProcessed += p.getTotalProcessedOranges();
             totalBottles += p.getBottles();
             totalWasted += p.getWaste();
         }
-        System.out.println("Total provided/processed = " + totalProvided + "/" + totalProcessed);
-        System.out.println("Created " + totalBottles +
-                           ", wasted " + totalWasted + " oranges");
+
+        System.out.println("\n======= Juice Plant Processing Summary =======");
+        System.out.println("Total Oranges Provided: " + totalProvided);
+        System.out.println("Total Oranges Fetched: " + totalFetched);
+        System.out.println("Total Oranges Processed: " + totalProcessed);
+        System.out.println("Total Bottles Created: " + totalBottles);
+        System.out.println("Total Oranges Wasted: " + totalWasted);
+        System.out.println("==============================================");
     }
 
+    /**
+     * Delays the program execution for a given time.
+     *
+     * @param time   The delay time in milliseconds.
+     * @param errMsg Error message to display in case of interruption.
+     */
     private static void delay(long time, String errMsg) {
         long sleepTime = Math.max(1, time);
         try {
@@ -48,66 +136,93 @@ public class Plant implements Runnable {
         }
     }
 
-    public final int ORANGES_PER_BOTTLE = 3;
-
-    private final Thread thread;
-    private int orangesProvided;
-    private int orangesProcessed;
-    private volatile boolean timeToWork;
-
-    Plant(int threadNum) {
-        orangesProvided = 0;
-        orangesProcessed = 0;
-        thread = new Thread(this, "Plant[" + threadNum + "]");
-    }
-
+    /**
+     * Starts the plant by initializing and starting the necessary workers.
+     */
     public void startPlant() {
         timeToWork = true;
         thread.start();
+        if (plantNumber % 2 != 0) {
+            workerThreads.add(new Thread(fetcher));
+            workerThreads.add(new Thread(peeler));
+            workers.add(fetcher);
+            workers.add(peeler);
+        } else {
+            workerThreads.add(new Thread(juicer));
+            workerThreads.add(new Thread(bottler));
+            workers.add(juicer);
+            workers.add(bottler);
+        }
+        workerThreads.forEach(Thread::start);
     }
 
+    /**
+     * Stops the plant and all associated worker threads.
+     */
     public void stopPlant() {
         timeToWork = false;
+        workers.forEach(Worker::stopWorker);
     }
 
-    public void waitToStop() {
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            System.err.println(thread.getName() + " stop malfunction");
+    /**
+     * Waits for all threads to stop gracefully.
+     *
+     * @throws InterruptedException If thread interruption occurs.
+     */
+    public void waitToStop() throws InterruptedException {
+        for (Thread t : workerThreads) {
+            t.join();
         }
+        thread.join();
     }
 
+    /**
+     * Runs the plant's orange processing loop.
+     */
     public void run() {
-        System.out.print(Thread.currentThread().getName() + " Processing oranges");
+        System.out.println(Thread.currentThread().getName() + " Processing oranges");
+        int count = 0;
         while (timeToWork) {
-            processEntireOrange(new Orange());
-            orangesProvided++;
-            System.out.print(".");
+            // Use this to give user feedback that the plant is processing
+            if ((count + 1) % 40 == 0) {
+                System.out.println(".");
+            }
+            try {
+                readyToFetchQueue.put(new Orange());
+                orangesProvided++;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            count++;
         }
-        System.out.println("");
-        System.out.println(Thread.currentThread().getName() + " Done");
+        System.out.println(Thread.currentThread().getName() + " Done Processing");
     }
 
-    public void processEntireOrange(Orange o) {
-        while (o.getState() != Orange.State.Bottled) {
-            o.runProcess();
-        }
-        orangesProcessed++;
-    }
-
+    /**
+     * @return The total number of oranges provided by the plant.
+     */
     public int getProvidedOranges() {
         return orangesProvided;
     }
 
-    public int getProcessedOranges() {
+    /**
+     * @return The total number of processed oranges.
+     */
+    public int getTotalProcessedOranges() {
+        orangesProcessed = bottler.getProcessedOranges();
         return orangesProcessed;
     }
 
+    /**
+     * @return The total number of bottles created.
+     */
     public int getBottles() {
         return orangesProcessed / ORANGES_PER_BOTTLE;
     }
 
+    /**
+     * @return The number of wasted oranges that didn't fit into full bottles.
+     */
     public int getWaste() {
         return orangesProcessed % ORANGES_PER_BOTTLE;
     }
